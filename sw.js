@@ -5,7 +5,7 @@
  * Bump CACHE whenever any shell file changes — old caches are dropped on
  * activate and the new worker takes over immediately.
  */
-const CACHE = 'fast-v5';
+const CACHE = 'fast-v6';
 
 const SHELL = [
   './',

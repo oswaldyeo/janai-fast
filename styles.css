@@ -166,6 +166,25 @@ button.fact:active { background: var(--surface-2); }
 }
 .btn-primary:active { opacity: .85; }
 .btn-primary.stop { background: var(--surface-2); color: var(--text); }
+
+/* The main timer button only — sheet Save/Done buttons stay quiet. Bigger
+   type + a slow glow while idle (an invitation to start), and a springy
+   press-down so the tap feels physical. The glow stops once a fast runs. */
+#primaryBtn {
+  font-size: 20px;
+  padding: 20px;
+  transition: transform .12s ease;
+  will-change: transform;
+}
+#primaryBtn:not(.stop) { animation: btn-beckon 2.8s ease-in-out infinite; }
+#primaryBtn:active { transform: scale(.95); }
+@keyframes btn-beckon {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 51, 79, 0); transform: scale(1); }
+  50%      { box-shadow: 0 0 26px 3px rgba(255, 51, 79, .38); transform: scale(1.015); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #primaryBtn:not(.stop) { animation: none; }
+}
 .btn-ghost {
   padding: 15px 18px; border-radius: var(--radius);
   background: none; border: 1px solid var(--line); color: var(--muted);

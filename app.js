@@ -144,6 +144,9 @@ if (current && (typeof current.startedAt !== 'number' || !(current.goalHours > 0
 }
 if (!Array.isArray(history)) history = [];
 if (!(goalHours > 0)) goalHours = 16;
+/* Mid-fast goal edits: the chips must reflect the running fast, not the
+   remembered idle default. */
+if (current) goalHours = current.goalHours;
 
 /* ── Formatting ───────────────────────────────────────────────────── */
 const pad = n => String(n).padStart(2, '0');
@@ -245,8 +248,9 @@ function render() {
         : `${Math.round(pct * 100)}% of ${humanHours(goal)}`)
     : `Goal ${humanHours(goal)}`;
 
-  /* Idle vs running chrome */
-  el.goalPicker.hidden = running;
+  /* Idle vs running chrome — the goal picker stays visible while running so
+     the goal can be changed mid-fast. */
+  el.goalPicker.hidden = false;
   el.runFacts.hidden = !running;
   el.primaryBtn.textContent = running ? 'End fast' : 'Start fast';
   el.primaryBtn.classList.toggle('stop', running);
@@ -351,6 +355,10 @@ function renderGoalChips() {
 function setGoal(h) {
   goalHours = h;
   save(KEY.goal, h);
+  if (current) {
+    current.goalHours = h;
+    save(KEY.current, current);
+  }
   el.customForm.hidden = true;
   renderGoalChips();
   lastTimelineGoal = null;

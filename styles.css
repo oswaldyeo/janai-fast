@@ -1,16 +1,16 @@
 /* Fast — minimal dark fasting timer. One accent, one rhythm, no chrome. */
 
 :root {
-  --bg:        #0A0C10;
-  --surface:   #141821;
-  --surface-2: #1C212C;
-  --line:      #242B38;
-  --text:      #E9EEF5;
-  --muted:     #8B95A7;
-  --dim:       #5C6678;
-  --accent:    #56D3A6;
-  --accent-dim:#2B6B57;
-  --warn:      #E4B363;
+  --bg:        #070708;
+  --surface:   #111113;
+  --surface-2: #1A1A1E;
+  --line:      #2B2B31;
+  --text:      #F8F8FA;
+  --muted:     #A2A2AD;
+  --dim:       #6B6B76;
+  --accent:    #FF334F;
+  --accent-dim:#63202B;
+  --warn:      #FFCB69;
   --radius:    16px;
   --pad:       20px;
 }
@@ -116,7 +116,7 @@ html, body {
 }
 .chip small { display: block; font-size: 11px; color: var(--dim); }
 .chip[aria-pressed="true"] {
-  background: var(--accent-dim); border-color: var(--accent); color: #EAFFF7;
+  background: var(--accent-dim); border-color: var(--accent); color: #FFECEF;
 }
 .chip[aria-pressed="true"] small { color: #B7EBD8; }
 
@@ -160,7 +160,7 @@ button.fact:active { background: var(--surface-2); }
 .btn-primary {
   display: block; width: 100%; margin: 22px 0 0;
   padding: 17px; border: 0; border-radius: var(--radius);
-  background: var(--accent); color: #06231A;
+  background: var(--accent); color: #FFFFFF;
   font: 600 16px/1 inherit; letter-spacing: .01em;
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
@@ -184,9 +184,9 @@ button.fact:active { background: var(--surface-2); }
 .stage-head h3 { margin: 0; font-size: 17px; font-weight: 600; }
 .pill {
   flex: 0 0 auto; font-size: 11px; padding: 4px 9px; border-radius: 999px;
-  background: var(--accent-dim); color: #CFF5E7; font-variant-numeric: tabular-nums;
+  background: var(--accent-dim); color: #FFD4DA; font-variant-numeric: tabular-nums;
 }
-.stage-card p { margin: 0 0 10px; font-size: 14.5px; color: #C6CEDB; }
+.stage-card p { margin: 0 0 10px; font-size: 14.5px; color: #C9C9D2; }
 .benefits { margin: 0; padding: 0; list-style: none; }
 .benefits li {
   position: relative; padding-left: 18px; font-size: 14px;
@@ -217,7 +217,7 @@ button.fact:active { background: var(--surface-2); }
 .tl-item.done::before { background: var(--accent-dim); border-color: var(--accent-dim); }
 .tl-item.current::before {
   background: var(--accent); border-color: var(--accent);
-  box-shadow: 0 0 0 4px rgba(86, 211, 166, .18);
+  box-shadow: 0 0 0 4px rgba(255, 51, 79, .18);
 }
 .tl-h {
   display: flex; gap: 8px; align-items: baseline; width: 100%;
@@ -230,7 +230,7 @@ button.fact:active { background: var(--surface-2); }
   width: 18px; text-align: center;
 }
 .tl-detail { padding: 8px 18px 0 0; }
-.tl-detail p { margin: 0 0 10px; font-size: 14px; color: #C6CEDB; }
+.tl-detail p { margin: 0 0 10px; font-size: 14px; color: #C9C9D2; }
 .tl-when {
   font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums;
   min-width: 52px;
@@ -253,13 +253,13 @@ button.fact:active { background: var(--surface-2); }
   flex: 0 0 auto; font-size: 11px; padding: 3px 8px; border-radius: 999px;
   background: var(--surface-2); color: var(--muted);
 }
-.badge.hit { background: var(--accent-dim); color: #CFF5E7; }
+.badge.hit { background: var(--accent-dim); color: #FFD4DA; }
 .empty { color: var(--dim); font-size: 14px; }
 
 /* ── Sheets ──────────────────────────────────────────────────── */
 .sheet-backdrop {
   position: fixed; inset: 0; z-index: 20;
-  background: rgba(5, 7, 10, .68);
+  background: rgba(7, 7, 8, .68);
   display: flex; align-items: flex-end; justify-content: center;
   padding: 16px;
   padding-bottom: calc(env(safe-area-inset-bottom) + 16px);

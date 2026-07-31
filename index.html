@@ -110,6 +110,47 @@
   <!-- ── History screen ───────────────────────────────────────── -->
   <main id="historyView" class="view" hidden>
     <h2 class="block-title">History</h2>
+
+    <!-- Stats strip — every figure derived from the log on render -->
+    <section id="statsBlock" class="block" hidden>
+      <div class="stats">
+        <div id="statStreakTile" class="stat stat-big">
+          <span class="stat-k">Current streak</span>
+          <span id="statStreak" class="stat-v">0 days</span>
+        </div>
+        <div class="stat stat-big">
+          <span class="stat-k">Longest streak</span>
+          <span id="statBestStreak" class="stat-v">0 days</span>
+        </div>
+        <div class="stat">
+          <span class="stat-k">Total fasts</span>
+          <span id="statTotal" class="stat-v">0</span>
+        </div>
+        <div class="stat">
+          <span class="stat-k">Longest fast</span>
+          <span id="statLongest" class="stat-v">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-k">7-day average</span>
+          <span id="statAvg7" class="stat-v">—</span>
+        </div>
+        <div class="stat">
+          <span class="stat-k">Goal hit rate</span>
+          <span id="statGoalRate" class="stat-v">—</span>
+        </div>
+      </div>
+      <p id="statMood" class="stat-mood" hidden></p>
+      <p class="stat-note">A day counts when a fast <em>ends</em> on it — two in
+        one day count once, and the streak holds until a whole day passes with
+        nothing ending. The 7-day average covers today and the six days before.</p>
+    </section>
+
+    <section id="achBlock" class="block" hidden>
+      <h2 class="block-title">Achievements <span id="achCount" class="block-hint"></span></h2>
+      <ul id="achGrid" class="ach-grid"></ul>
+    </section>
+
+    <h2 id="historyHead" class="block-title" hidden>Completed fasts</h2>
     <ul id="historyList" class="history"></ul>
     <p id="historyEmpty" class="empty" hidden>No completed fasts yet.</p>
     <button id="clearHistoryBtn" class="btn-ghost" type="button" hidden>Clear history</button>
@@ -136,6 +177,11 @@
     <h2 id="summaryTitle">Fast complete</h2>
     <p id="summaryLine" class="summary-line"></p>
     <p id="summaryGoal" class="muted"></p>
+    <div id="summaryUnlocks" hidden></div>
+
+    <h3 class="mini-title">How do you feel?</h3>
+    <div id="moodRow" class="mood-row"></div>
+
     <h3 class="mini-title">Stages reached</h3>
     <ul id="summaryStages" class="benefits"></ul>
     <div class="sheet-actions">

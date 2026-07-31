@@ -109,10 +109,56 @@ const PRESETS = [
   { h: 36, label: '36h', note: 'extended' }
 ];
 
+/* ── Achievements ─────────────────────────────────────────────────────
+ * Everything here is a pure function of the history log, so a badge can be
+ * granted retroactively on the first load after an update — past fasts count.
+ * `test` is applied by earnedAt() below; this list is display order too.
+ */
+const ACHIEVEMENTS = [
+  { id: 'first',  icon: '🌱', name: 'First fast',   hint: 'Finish one fast' },
+  { id: 'h12',    icon: '🔑', name: 'Ketosis',      hint: 'Reach 12h' },
+  { id: 'h16',    icon: '🔥', name: 'Sixteen',      hint: 'Reach 16h' },
+  { id: 'h18',    icon: '🧬', name: 'Autophagy',    hint: 'Reach 18h' },
+  { id: 'h24',    icon: '🌗', name: 'Full day',     hint: 'Reach 24h' },
+  { id: 'n5',     icon: '🥉', name: 'Five fasts',   hint: '5 completed' },
+  { id: 'n10',    icon: '🥈', name: 'Ten fasts',    hint: '10 completed' },
+  { id: 'n25',    icon: '🥇', name: 'Twenty-five',  hint: '25 completed' },
+  { id: 's3',     icon: '⚡', name: '3-day streak', hint: '3 days running' },
+  { id: 's7',     icon: '🌊', name: '7-day streak', hint: '7 days running' },
+  { id: 's14',    icon: '🚀', name: '14-day streak', hint: '14 days running' },
+  { id: 'goal10', icon: '🎯', name: 'Ten on target', hint: 'Hit goal 10×' }
+];
+
+/* ── Mood ─────────────────────────────────────────────────────────── */
+const MOODS = [
+  { v: 1, icon: '😩', label: 'Drained' },
+  { v: 2, icon: '😕', label: 'Low' },
+  { v: 3, icon: '😐', label: 'Okay' },
+  { v: 4, icon: '🙂', label: 'Good' },
+  { v: 5, icon: '😄', label: 'Great' }
+];
+const MOOD_BY_VALUE = new Map(MOODS.map(m => [m.v, m]));
+const MOOD_BUCKETS = [
+  { label: 'under 14h', test: h => h < 14 },
+  { label: '14–18h',    test: h => h >= 14 && h <= 18 },
+  { label: 'over 18h',  test: h => h > 18 }
+];
+const MOOD_MIN_SAMPLES = 3;   // below this the average is noise, so we hide it
+
 /* ── Storage ──────────────────────────────────────────────────────── */
-const KEY = { current: 'fast.current', goal: 'fast.lastGoal', hist: 'fast.history' };
-const HISTORY_MAX = 30;
+const KEY = {
+  current: 'fast.current', goal: 'fast.lastGoal', hist: 'fast.history',
+  ach: 'fast.achievements'
+};
+/* A year of fasts. The stats strip reports lifetime figures — total fasts,
+   longest fast, longest streak — so the log has to outlive the window they're
+   read over. At ~120 bytes an entry this is ~45KB, nothing against the
+   localStorage budget. (Was 30 before the stats existed.) */
+const HISTORY_MAX = 365;
 const MS_H = 3600000;
+/* The widest epoch Date and Intl can format. A finite number outside this
+   range is corrupt, not merely old, and formatting it throws a RangeError. */
+const TS_MAX = 8.64e15;
 
 function load(key, fallback) {
   try {
@@ -136,14 +182,66 @@ function save(key, value) {
 let current = load(KEY.current, null);
 let goalHours = load(KEY.goal, 16);
 let history = load(KEY.hist, []);
-let lastSaved = null;          // the history entry shown in the summary sheet
+let achievements = load(KEY.ach, {});
+let lastSavedId = null;        // id of the history entry shown in the summary sheet
 
 if (current && (typeof current.startedAt !== 'number' || !(current.goalHours > 0))) {
   current = null;
   save(KEY.current, null);
 }
-if (!Array.isArray(history)) history = [];
 if (!(goalHours > 0)) goalHours = 16;
+
+const num = v => typeof v === 'number' && Number.isFinite(v);
+const validTs = v => num(v) && Math.abs(v) <= TS_MAX;
+
+if (!achievements || typeof achievements !== 'object' || Array.isArray(achievements)) {
+  achievements = {};
+} else {
+  /* A badge carrying an unformattable timestamp would throw inside Intl on the
+     very first render and take the whole app down before it painted. Drop the
+     bad value — syncAchievements() below regrants it from history. */
+  for (const id of Object.keys(achievements)) {
+    if (!validTs(achievements[id])) delete achievements[id];
+  }
+}
+
+/** Entries written before r2 have no `mood`, and a crash mid-write can leave a
+ *  half-formed one. Repair what's recoverable, drop what isn't — every consumer
+ *  below can then assume the four core fields exist and are formattable. */
+function sanitizeHistory(list) {
+  if (!Array.isArray(list)) return [];
+  const ids = new Set();
+  return list
+    .map(f => {
+      if (!f || typeof f !== 'object') return null;
+      const e = Object.assign({}, f);
+      /* Lose either the duration or the end time and the other two fields still
+         pin it down. Reconstruct before discarding — this is someone's log. */
+      if (!num(e.durationMs) && validTs(e.startedAt) && validTs(e.endedAt)) {
+        e.durationMs = e.endedAt - e.startedAt;
+      }
+      if (!validTs(e.startedAt) || !num(e.durationMs) || e.durationMs < 0) return null;
+      if (!validTs(e.endedAt)) e.endedAt = e.startedAt + e.durationMs;
+      if (!validTs(e.endedAt)) return null;
+      if (!(e.goalHours > 0)) e.goalHours = 16;
+      const m = Math.round(Number(e.mood));
+      if (m >= 1 && m <= 5) e.mood = m; else delete e.mood;
+      /* Ids key the mood writes and the delete-this-fast escape hatch, so a
+         collision would silently rewrite or remove the wrong fast. */
+      if (typeof e.id !== 'string') e.id = String(e.startedAt);
+      while (ids.has(e.id)) e.id += '-';
+      ids.add(e.id);
+      return e;
+    })
+    .filter(Boolean)
+    .slice(0, HISTORY_MAX);
+}
+
+const rawHistory = JSON.stringify(history);
+history = sanitizeHistory(history);
+/* Only write back if we actually changed something — no pointless churn (and
+   no write at all on the overwhelmingly common clean-load path). */
+if (JSON.stringify(history) !== rawHistory) save(KEY.hist, history);
 /* Mid-fast goal edits: the chips must reflect the running fast, not the
    remembered idle default. */
 if (current) goalHours = current.goalHours;
@@ -156,11 +254,13 @@ function hms(ms) {
   return `${Math.floor(t / 3600)}:${pad(Math.floor(t / 60) % 60)}:${pad(t % 60)}`;
 }
 
-/** "16h" / "16h 30m" — for goals and durations in prose. */
+/** "16h" / "16h 30m" — for goals and durations in prose. Round to whole minutes
+ *  first, then split: rounding the remainder on its own turns 16.999h into
+ *  "16h 60m", which the 7-day average would hit most weeks. */
 function humanHours(hours) {
-  const h = Math.floor(hours);
-  const m = Math.round((hours - h) * 60);
-  return m ? `${h}h ${m}m` : `${h}h`;
+  const mins = Math.round(hours * 60);
+  const m = mins % 60;
+  return m ? `${Math.floor(mins / 60)}h ${m}m` : `${Math.floor(mins / 60)}h`;
 }
 
 const timeFmt = new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' });
@@ -200,6 +300,122 @@ function stageRange(s) {
   return s.to === Infinity ? `${s.from}h+` : `${s.from}–${s.to}h`;
 }
 
+/* ── Derived stats ────────────────────────────────────────────────────
+ * Nothing here is stored. Streaks, totals and averages are recomputed from
+ * `history` on every render, so an edited start time or a deleted fast is
+ * reflected immediately and there's no second store to drift out of sync.
+ */
+
+/** The local calendar day as an integer. Doing the arithmetic in UTC on the
+ *  already-localised Y/M/D keeps it right across DST, where a naive
+ *  midnight-to-midnight millisecond division is off by an hour twice a year. */
+function dayIndex(ts) {
+  const d = new Date(ts);
+  return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / 86400000);
+}
+
+/** Unique calendar days a fast ENDED on, ascending. Two fasts on one day count
+ *  once; a backdated fast lands on whatever day its end time says. */
+function endDays(list) {
+  return [...new Set(list.map(f => dayIndex(f.endedAt)))].sort((a, b) => a - b);
+}
+
+function meanBy(list, fn) {
+  return list.length ? list.reduce((a, x) => a + fn(x), 0) / list.length : null;
+}
+
+function computeStats(list, now = Date.now()) {
+  const st = {
+    total: list.length, current: 0, longest: 0, longestFast: null,
+    avg7: null, goalRate: null, moodCount: 0, moodAvg: null, buckets: []
+  };
+  if (!list.length) return st;
+
+  /* reduce, not Math.max(...spread) — a long log would blow the argument limit */
+  st.longestFast = list.reduce((a, f) => Math.max(a, f.durationMs), 0);
+  st.goalRate = Math.round(
+    list.filter(f => f.durationMs / MS_H >= f.goalHours).length / list.length * 100);
+
+  const today = dayIndex(now);
+  const recent = list.filter(f => dayIndex(f.endedAt) > today - 7);
+  st.avg7 = meanBy(recent, f => f.durationMs);
+
+  const days = endDays(list);
+  let run = 0;
+  for (let i = 0; i < days.length; i++) {
+    run = (i > 0 && days[i] === days[i - 1] + 1) ? run + 1 : 1;
+    if (run > st.longest) st.longest = run;
+  }
+  /* The current streak survives today: you may simply not have ended a fast
+     yet, so a run that reached yesterday is still live. It breaks once a whole
+     calendar day passes with nothing ending on it. */
+  if (days[days.length - 1] >= today - 1) {
+    st.current = 1;
+    for (let i = days.length - 1; i > 0 && days[i - 1] === days[i] - 1; i--) st.current++;
+  }
+
+  const moods = list.filter(f => f.mood >= 1 && f.mood <= 5);
+  st.moodCount = moods.length;
+  st.moodAvg = meanBy(moods, f => f.mood);
+  st.buckets = MOOD_BUCKETS.map(b => {
+    const inBucket = moods.filter(f => b.test(f.durationMs / MS_H));
+    return { label: b.label, n: inBucket.length, avg: meanBy(inBucket, f => f.mood) };
+  });
+  return st;
+}
+
+/** { achievementId: epochMs } for everything the log currently satisfies. The
+ *  timestamp is the end of the fast that earned it, not "now" — so a badge
+ *  granted retroactively still shows the day it was actually reached. */
+function earnedAt(list) {
+  const out = {};
+  const mark = (id, ts) => { if (out[id] === undefined) out[id] = ts; };
+  const done = list.slice().sort((a, b) => a.endedAt - b.endedAt);
+
+  let n = 0, hits = 0;
+  for (const f of done) {
+    n++;
+    const hrs = f.durationMs / MS_H;
+    if (n === 1) mark('first', f.endedAt);
+    if (n === 5) mark('n5', f.endedAt);
+    if (n === 10) mark('n10', f.endedAt);
+    if (n === 25) mark('n25', f.endedAt);
+    if (hrs >= 12) mark('h12', f.endedAt);
+    if (hrs >= 16) mark('h16', f.endedAt);
+    if (hrs >= 18) mark('h18', f.endedAt);
+    if (hrs >= 24) mark('h24', f.endedAt);
+    if (hrs >= f.goalHours && ++hits === 10) mark('goal10', f.endedAt);
+  }
+
+  const lastEndOnDay = new Map();
+  for (const f of done) {
+    const d = dayIndex(f.endedAt);
+    lastEndOnDay.set(d, Math.max(lastEndOnDay.get(d) || 0, f.endedAt));
+  }
+  const days = endDays(done);
+  let run = 0;
+  for (let i = 0; i < days.length; i++) {
+    run = (i > 0 && days[i] === days[i - 1] + 1) ? run + 1 : 1;
+    if (run === 3) mark('s3', lastEndOnDay.get(days[i]));
+    if (run === 7) mark('s7', lastEndOnDay.get(days[i]));
+    if (run === 14) mark('s14', lastEndOnDay.get(days[i]));
+  }
+  return out;
+}
+
+/** Grant anything newly satisfied and persist it. Returns the fresh unlocks in
+ *  display order so the summary sheet can name them. Unlocks are sticky: an
+ *  earned badge survives clearing the history or the log rolling past
+ *  HISTORY_MAX — that's the whole reason they're stored rather than derived. */
+function syncAchievements() {
+  const earned = earnedAt(history);
+  const fresh = ACHIEVEMENTS.filter(
+    a => earned[a.id] !== undefined && achievements[a.id] === undefined);
+  for (const a of fresh) achievements[a.id] = earned[a.id];
+  if (fresh.length) save(KEY.ach, achievements);
+  return fresh;
+}
+
 /* ── DOM ──────────────────────────────────────────────────────────── */
 const $ = id => document.getElementById(id);
 const el = {
@@ -216,11 +432,18 @@ const el = {
   nextUnlock: $('nextUnlock'), nextBody: $('nextBody'), nextBenefits: $('nextBenefits'),
   timeline: $('timeline'),
   historyList: $('historyList'), historyEmpty: $('historyEmpty'),
-  clearHistoryBtn: $('clearHistoryBtn'),
+  clearHistoryBtn: $('clearHistoryBtn'), historyHead: $('historyHead'),
+  statsBlock: $('statsBlock'), statStreakTile: $('statStreakTile'),
+  statStreak: $('statStreak'), statBestStreak: $('statBestStreak'),
+  statTotal: $('statTotal'), statLongest: $('statLongest'),
+  statAvg7: $('statAvg7'), statGoalRate: $('statGoalRate'),
+  statMood: $('statMood'),
+  achBlock: $('achBlock'), achCount: $('achCount'), achGrid: $('achGrid'),
   editSheet: $('editSheet'), editForm: $('editForm'), startInput: $('startInput'),
   editError: $('editError'),
   summarySheet: $('summarySheet'), summaryTitle: $('summaryTitle'),
   summaryLine: $('summaryLine'), summaryGoal: $('summaryGoal'),
+  summaryUnlocks: $('summaryUnlocks'), moodRow: $('moodRow'),
   summaryStages: $('summaryStages'), summaryDone: $('summaryDone'),
   discardBtn: $('discardBtn')
 };
@@ -231,6 +454,7 @@ const RING_C = 2 * Math.PI * 88;   // matches r=88 in index.html
 let lastStageIdx = -1;
 let lastNextIdx = -2;
 let lastTimelineGoal = null;
+let lastDay = -1;
 
 function benefitItems(list) {
   return list.map(b => {
@@ -250,6 +474,18 @@ function untilLabel(hoursLeft) {
 function render() {
   const running = !!current;
   const now = Date.now();
+
+  /* Streaks and the 7-day window are measured against "today", so they go
+     stale the instant the date rolls over — or when the phone wakes up days
+     after it went to sleep with the history screen open. Both land here,
+     because visibilitychange and pageshow repaint through render(). */
+  const today = dayIndex(now);
+  if (today !== lastDay) {
+    const first = lastDay === -1;
+    lastDay = today;
+    if (!first) renderHistory();
+  }
+
   const elapsedMs = running ? now - current.startedAt : 0;
   const hours = elapsedMs / MS_H;
   const goal = running ? current.goalHours : goalHours;
@@ -420,8 +656,10 @@ function setGoal(h) {
 
 /* ── History ──────────────────────────────────────────────────────── */
 function renderHistory() {
-  el.historyEmpty.hidden = history.length > 0;
-  el.clearHistoryBtn.hidden = history.length === 0;
+  const any = history.length > 0;
+  el.historyEmpty.hidden = any;
+  el.clearHistoryBtn.hidden = !any;
+  el.historyHead.hidden = !any;
   el.historyList.replaceChildren(...history.map(f => {
     const li = document.createElement('li');
     const hrs = f.durationMs / MS_H;
@@ -435,6 +673,14 @@ function renderHistory() {
     dur.className = 'h-dur';
     dur.textContent = humanHours(hrs);
 
+    const mood = document.createElement('span');
+    mood.className = 'h-mood';
+    const m = MOOD_BY_VALUE.get(f.mood);
+    if (m) {
+      mood.textContent = m.icon;
+      mood.title = m.label;
+    }
+
     const goal = document.createElement('span');
     goal.className = 'h-goal';
     goal.textContent = `goal ${humanHours(f.goalHours)}`;
@@ -443,7 +689,84 @@ function renderHistory() {
     badge.className = 'badge' + (hit ? ' hit' : '');
     badge.textContent = hit ? 'hit' : 'short';
 
-    li.append(date, dur, goal, badge);
+    li.append(date, dur, mood, goal, badge);
+    return li;
+  }));
+  renderStats();
+  renderAchievements();
+}
+
+/* ── Stats strip ──────────────────────────────────────────────────── */
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+function renderStats() {
+  el.statsBlock.hidden = history.length === 0;
+  if (!history.length) return;
+
+  const s = computeStats(history);
+  el.statStreakTile.classList.toggle('on', s.current > 0);
+  el.statStreak.textContent = plural(s.current, 'day');
+  el.statBestStreak.textContent = plural(s.longest, 'day');
+  el.statTotal.textContent = String(s.total);
+  el.statLongest.textContent = humanHours(s.longestFast / MS_H);
+  el.statAvg7.textContent = s.avg7 === null ? '—' : humanHours(s.avg7 / MS_H);
+  el.statGoalRate.textContent = `${s.goalRate}%`;
+
+  renderMoodSummary(s);
+}
+
+/** Bold-label prose rather than a chart — three numbers don't earn axes. */
+function renderMoodSummary(s) {
+  el.statMood.hidden = s.moodCount < MOOD_MIN_SAMPLES;
+  if (el.statMood.hidden) return;
+
+  const parts = [strong('Mood'), document.createTextNode(' averages ')];
+  parts.push(strong(s.moodAvg.toFixed(1)), document.createTextNode(` of 5 across ${
+    plural(s.moodCount, 'check-in')}`));
+
+  /* A bucket holding one check-in isn't an average, it's an anecdote. */
+  const shown = s.buckets.filter(b => b.n >= 2);
+  if (shown.length > 1) {
+    parts.push(document.createTextNode(' — '));
+    shown.forEach((b, i) => {
+      if (i) parts.push(document.createTextNode(', '));
+      parts.push(document.createTextNode(`${b.label} `), strong(b.avg.toFixed(1)));
+    });
+  }
+  parts.push(document.createTextNode('.'));
+  el.statMood.replaceChildren(...parts);
+
+  function strong(text) {
+    const s2 = document.createElement('strong');
+    s2.textContent = text;
+    return s2;
+  }
+}
+
+/* ── Achievements grid ────────────────────────────────────────────── */
+function renderAchievements() {
+  const unlocked = ACHIEVEMENTS.filter(a => achievements[a.id] !== undefined).length;
+  el.achBlock.hidden = history.length === 0 && unlocked === 0;
+  el.achCount.textContent = `${unlocked} of ${ACHIEVEMENTS.length}`;
+  el.achGrid.replaceChildren(...ACHIEVEMENTS.map(a => {
+    const at = achievements[a.id];
+    const li = document.createElement('li');
+    li.className = 'ach' + (at === undefined ? '' : ' on');
+    li.dataset.id = a.id;
+
+    const icon = document.createElement('span');
+    icon.className = 'ach-icon';
+    icon.textContent = a.icon;
+
+    const name = document.createElement('span');
+    name.className = 'ach-name';
+    name.textContent = a.name;
+
+    const meta = document.createElement('span');
+    meta.className = 'ach-meta';
+    meta.textContent = at === undefined ? a.hint : dateFmt.format(new Date(at));
+
+    li.append(icon, name, meta);
     return li;
   }));
 }
@@ -472,15 +795,16 @@ function endFast() {
 
   current = null;
   save(KEY.current, null);
-  lastSaved = entry;
+  lastSavedId = entry.id;
   lastStageIdx = -1;
   lastTimelineGoal = null;
+  const fresh = syncAchievements();
   render();
   renderHistory();
-  showSummary(entry);
+  showSummary(entry, fresh);
 }
 
-function showSummary(f) {
+function showSummary(f, fresh = []) {
   const hrs = f.durationMs / MS_H;
   const hit = hrs >= f.goalHours;
   const reached = STAGES.filter(s => hrs >= s.from);
@@ -490,6 +814,17 @@ function showSummary(f) {
   el.summaryGoal.textContent = hit
     ? `${humanHours(hrs)} against a ${humanHours(f.goalHours)} goal — nice.`
     : `${humanHours(hrs)} of a ${humanHours(f.goalHours)} goal. Still counts.`;
+
+  el.summaryUnlocks.hidden = fresh.length === 0;
+  el.summaryUnlocks.replaceChildren(...fresh.map(a => {
+    const p = document.createElement('p');
+    p.className = 'unlocked';
+    p.textContent = `Unlocked: ${a.icon} ${a.name}`;
+    return p;
+  }));
+
+  renderMoodPicker(f);
+
   el.summaryStages.replaceChildren(...reached.map(s => {
     const li = document.createElement('li');
     li.textContent = `${s.name} (${stageRange(s)})`;
@@ -498,13 +833,46 @@ function showSummary(f) {
   el.summarySheet.hidden = false;
 }
 
+/* ── Mood check-in ────────────────────────────────────────────────── */
+/** Optional by design: no default selection, no nag. Tapping the selected
+ *  level again clears it, so a mis-tap isn't permanent. */
+function renderMoodPicker(f) {
+  el.moodRow.replaceChildren(...MOODS.map(m => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'mood';
+    b.setAttribute('aria-pressed', String(f.mood === m.v));
+    b.setAttribute('aria-label', m.label);
+
+    const icon = document.createElement('span');
+    icon.className = 'mood-g';
+    icon.textContent = m.icon;
+    const label = document.createElement('span');
+    label.className = 'mood-t';
+    label.textContent = m.label;
+
+    b.append(icon, label);
+    b.addEventListener('click', () => setMood(f.id, f.mood === m.v ? null : m.v));
+    return b;
+  }));
+}
+
+function setMood(id, value) {
+  const entry = history.find(f => f.id === id);
+  if (!entry) return;
+  if (value === null) delete entry.mood; else entry.mood = value;
+  save(KEY.hist, history);
+  renderMoodPicker(entry);
+  renderHistory();
+}
+
 function discardLast() {
-  if (lastSaved) {
-    history = history.filter(f => f.id !== lastSaved.id);
+  if (lastSavedId !== null) {
+    history = history.filter(f => f.id !== lastSavedId);
     save(KEY.hist, history);
     renderHistory();
   }
-  lastSaved = null;
+  lastSavedId = null;
   el.summarySheet.hidden = true;
 }
 
@@ -553,7 +921,7 @@ el.editStartBtn.addEventListener('click', openEditSheet);
 el.editForm.addEventListener('submit', submitEdit);
 el.navBtn.addEventListener('click', toggleView);
 el.summaryDone.addEventListener('click', () => {
-  lastSaved = null;
+  lastSavedId = null;
   el.summarySheet.hidden = true;
 });
 el.discardBtn.addEventListener('click', discardLast);
@@ -580,6 +948,9 @@ for (const sheet of [el.editSheet, el.summarySheet]) {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) render(); });
 window.addEventListener('pageshow', render);
 
+/* Retroactive grant: the first load after this update lights up every badge
+   the existing log already earned, so upgrading doesn't reset you to zero. */
+syncAchievements();
 renderGoalChips();
 renderHistory();
 render();

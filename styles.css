@@ -240,15 +240,70 @@ button.fact:active { background: var(--surface-2); }
 .tl-item.current .tl-when { color: var(--accent); }
 .tl-item.upcoming .tl-name { color: var(--dim); }
 
+/* ── Stats strip ─────────────────────────────────────────────── */
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 12px 14px; min-width: 0;
+}
+.stat-k {
+  display: block; font-size: 11px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--dim); margin-bottom: 3px;
+}
+.stat-v { display: block; font-size: 17px; font-variant-numeric: tabular-nums; }
+.stat-big .stat-v { font-size: 24px; font-weight: 300; letter-spacing: -.01em; }
+/* Only the live streak takes the accent — one thing on the screen is "on". */
+.stat.on { border-color: var(--accent); }
+.stat.on .stat-v { color: var(--accent); }
+.stat-mood { font-size: 13.5px; line-height: 1.55; color: var(--muted); margin: 14px 0 0; }
+.stat-mood strong { color: var(--text); font-weight: 600; }
+.stat-note { font-size: 11.5px; line-height: 1.6; color: var(--dim); margin: 12px 0 0; }
+.stat-note em { font-style: normal; color: var(--muted); }
+
+/* ── Achievements ────────────────────────────────────────────── */
+.ach-grid {
+  list-style: none; margin: 0; padding: 0; display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px;
+}
+.ach {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 12px 6px; text-align: center;
+  opacity: .45;
+}
+.ach-icon { display: block; font-size: 21px; line-height: 1.2; filter: grayscale(1); }
+.ach-name { display: block; font-size: 12.5px; margin-top: 5px; }
+.ach-meta { display: block; font-size: 10.5px; color: var(--dim); margin-top: 2px; }
+.ach.on { opacity: 1; border-color: var(--accent); }
+.ach.on .ach-icon { filter: none; }
+.ach.on .ach-meta { color: var(--accent); }
+
+/* ── Mood check-in ───────────────────────────────────────────── */
+.mood-row { display: flex; gap: 6px; }
+.mood {
+  flex: 1 1 0; min-width: 0;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: 14px; padding: 9px 2px; color: var(--muted);
+  font: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+/* Faces stay in colour even when unselected — desaturating them flattens five
+   distinct expressions into five near-identical grey discs. Opacity carries
+   the unselected state instead. */
+.mood-g { display: block; font-size: 20px; line-height: 1.2; opacity: .6; }
+.mood-t { display: block; font-size: 10px; margin-top: 3px; }
+.mood[aria-pressed="true"] { border-color: var(--accent); color: var(--text); }
+.mood[aria-pressed="true"] .mood-g { opacity: 1; }
+.unlocked { font-size: 13.5px; color: var(--accent); margin: 12px 0 0; }
+
 /* ── History ─────────────────────────────────────────────────── */
 .history { list-style: none; margin: 0 0 16px; padding: 0; }
 .history li {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; align-items: center; gap: 10px;
   padding: 13px 2px; border-bottom: 1px solid var(--line);
 }
-.h-date { flex: 0 0 74px; font-size: 13px; color: var(--muted); }
+.h-date { flex: 0 0 66px; font-size: 13px; color: var(--muted); }
 .h-dur { flex: 1; font-size: 15px; font-variant-numeric: tabular-nums; }
-.h-goal { font-size: 13px; color: var(--dim); }
+.h-mood { flex: 0 0 auto; font-size: 15px; line-height: 1; }
+.h-goal { flex: 0 0 auto; font-size: 13px; color: var(--dim); }
 .badge {
   flex: 0 0 auto; font-size: 11px; padding: 3px 8px; border-radius: 999px;
   background: var(--surface-2); color: var(--muted);
@@ -268,6 +323,11 @@ button.fact:active { background: var(--surface-2); }
   width: 100%; max-width: 460px;
   background: var(--surface); border: 1px solid var(--line);
   border-radius: 22px; padding: 22px;
+  /* The summary sheet grew a mood row and unlock lines — on a short phone with
+     every stage reached it can now outrun the viewport. Let it scroll. */
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
 }
 .sheet h2 { margin: 0 0 14px; font-size: 19px; }
 .mini-title {

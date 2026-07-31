@@ -5,7 +5,7 @@
  * Bump CACHE whenever any shell file changes — old caches are dropped on
  * activate and the new worker takes over immediately.
  */
-const CACHE = 'fast-v4';
+const CACHE = 'fast-v5';
 
 const SHELL = [
   './',
@@ -23,7 +23,11 @@ const SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE)
-      .then(c => c.addAll(SHELL))
+      // `cache: 'reload'` bypasses the HTTP cache. Without it addAll is free to
+      // re-cache a stale index.html next to a fresh app.js and freeze that
+      // mismatch into the new cache — markup missing the elements the script
+      // expects, which is a shell that boots straight into a dead page.
+      .then(c => c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });
@@ -31,7 +35,11 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      // Only our own caches. github.io puts every project on the account onto
+      // one origin, and caches are origin-scoped — a blanket delete here would
+      // wipe a sibling Pages PWA's offline shell out from under it.
+      .then(keys => Promise.all(
+        keys.filter(k => k.startsWith('fast-') && k !== CACHE).map(k => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

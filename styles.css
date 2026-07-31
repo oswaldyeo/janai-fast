@@ -197,6 +197,11 @@ button.fact:active { background: var(--surface-2); }
   width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
 }
 
+/* ── Next-up card ────────────────────────────────────────────── */
+.next-card { border-style: dashed; }
+.unlock { font-size: 12.5px; color: var(--accent); margin: -2px 0 10px !important; }
+.block-hint { font-size: 11.5px; color: var(--dim); font-weight: 400; margin-left: 8px; }
+
 /* ── Timeline ────────────────────────────────────────────────── */
 .timeline { list-style: none; margin: 0; padding: 0 0 0 22px; position: relative; }
 .timeline::before {
@@ -214,7 +219,18 @@ button.fact:active { background: var(--surface-2); }
   background: var(--accent); border-color: var(--accent);
   box-shadow: 0 0 0 4px rgba(86, 211, 166, .18);
 }
-.tl-h { display: flex; gap: 8px; align-items: baseline; }
+.tl-h {
+  display: flex; gap: 8px; align-items: baseline; width: 100%;
+  background: none; border: 0; padding: 0; margin: 0;
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.tl-chev {
+  margin-left: auto; flex: 0 0 auto; font-size: 15px; color: var(--dim);
+  width: 18px; text-align: center;
+}
+.tl-detail { padding: 8px 18px 0 0; }
+.tl-detail p { margin: 0 0 10px; font-size: 14px; color: #C6CEDB; }
 .tl-when {
   font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums;
   min-width: 52px;

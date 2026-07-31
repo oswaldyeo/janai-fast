@@ -212,6 +212,8 @@ const el = {
   editStartBtn: $('editStartBtn'), primaryBtn: $('primaryBtn'),
   stageTitle: $('stageTitle'), stageRange: $('stageRange'),
   stageBody: $('stageBody'), stageBenefits: $('stageBenefits'),
+  nextBlock: $('nextBlock'), nextTitle: $('nextTitle'), nextRange: $('nextRange'),
+  nextUnlock: $('nextUnlock'), nextBody: $('nextBody'), nextBenefits: $('nextBenefits'),
   timeline: $('timeline'),
   historyList: $('historyList'), historyEmpty: $('historyEmpty'),
   clearHistoryBtn: $('clearHistoryBtn'),
@@ -227,7 +229,23 @@ const RING_C = 2 * Math.PI * 88;   // matches r=88 in index.html
 
 /* ── Render ───────────────────────────────────────────────────────── */
 let lastStageIdx = -1;
+let lastNextIdx = -2;
 let lastTimelineGoal = null;
+
+function benefitItems(list) {
+  return list.map(b => {
+    const li = document.createElement('li');
+    li.textContent = b;
+    return li;
+  });
+}
+
+/** "in 3h 12m" / "in 42m" — countdown to the next stage boundary. */
+function untilLabel(hoursLeft) {
+  const mins = Math.max(1, Math.ceil(hoursLeft * 60));
+  const h = Math.floor(mins / 60), m = mins % 60;
+  return h ? `${h}h ${m}m` : `${m}m`;
+}
 
 function render() {
   const running = !!current;
@@ -269,13 +287,26 @@ function render() {
     el.stageTitle.textContent = s.name;
     el.stageRange.textContent = stageRange(s);
     el.stageBody.textContent = s.body;
-    el.stageBenefits.replaceChildren(...s.benefits.map(b => {
-      const li = document.createElement('li');
-      li.textContent = b;
-      return li;
-    }));
+    el.stageBenefits.replaceChildren(...benefitItems(s.benefits));
     lastStageIdx = idx;
     lastTimelineGoal = null;      // force a timeline repaint
+  }
+
+  /* Next-up card — full details of the stage about to unlock */
+  const nextIdx = idx + 1 < STAGES.length ? idx + 1 : -1;
+  el.nextBlock.hidden = nextIdx === -1;
+  if (nextIdx !== -1) {
+    const n = STAGES[nextIdx];
+    if (nextIdx !== lastNextIdx) {
+      el.nextTitle.textContent = n.name;
+      el.nextRange.textContent = stageRange(n);
+      el.nextBody.textContent = n.body;
+      el.nextBenefits.replaceChildren(...benefitItems(n.benefits));
+      lastNextIdx = nextIdx;
+    }
+    el.nextUnlock.textContent = running
+      ? `Unlocks in ${untilLabel(n.from - hours)}`
+      : `Unlocks ${n.from}h into a fast`;
   }
   if (lastTimelineGoal !== goal || el.timeline.childElementCount === 0) {
     renderTimeline(idx, goal, running);
@@ -291,16 +322,38 @@ function renderTimeline(activeIdx, goal, running) {
     li.className = 'tl-item';
     li.dataset.i = String(i);
 
-    const head = document.createElement('div');
+    const head = document.createElement('button');
+    head.type = 'button';
     head.className = 'tl-h';
+    head.setAttribute('aria-expanded', 'false');
     const when = document.createElement('span');
     when.className = 'tl-when';
     when.textContent = stageRange(s);
     const name = document.createElement('span');
     name.className = 'tl-name';
     name.textContent = s.name;
-    head.append(when, name);
-    li.append(head);
+    const chev = document.createElement('span');
+    chev.className = 'tl-chev';
+    chev.textContent = '+';
+    head.append(when, name, chev);
+
+    const detail = document.createElement('div');
+    detail.className = 'tl-detail';
+    detail.hidden = true;
+    const body = document.createElement('p');
+    body.textContent = s.body;
+    const ul = document.createElement('ul');
+    ul.className = 'benefits';
+    ul.append(...benefitItems(s.benefits));
+    detail.append(body, ul);
+
+    head.addEventListener('click', () => {
+      detail.hidden = !detail.hidden;
+      chev.textContent = detail.hidden ? '+' : '–';
+      head.setAttribute('aria-expanded', String(!detail.hidden));
+    });
+
+    li.append(head, detail);
 
     if (!running && s.from >= goal) li.style.opacity = '.55';
     return li;

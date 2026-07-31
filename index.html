@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Fast</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A minimal offline fasting timer.">
+<meta name="theme-color" content="#0A0C10">
+<meta name="color-scheme" content="dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Fast">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="topbar">
+    <span class="brand">Fast</span>
+    <button id="navBtn" class="icon-btn" type="button" aria-label="History">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    </button>
+  </header>
+
+  <!-- ── Timer screen ─────────────────────────────────────────── -->
+  <main id="timerView" class="view">
+
+    <section class="ring-wrap">
+      <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="ring-track" cx="100" cy="100" r="88"/>
+        <circle id="ringFill" class="ring-fill" cx="100" cy="100" r="88"/>
+      </svg>
+      <div class="ring-center">
+        <p id="ringLabel" class="ring-label">Elapsed</p>
+        <p id="elapsed" class="elapsed" role="timer" aria-live="off">0:00:00</p>
+        <p id="ringSub" class="ring-sub">Ready when you are</p>
+      </div>
+    </section>
+
+    <!-- Idle: goal picker -->
+    <section id="goalPicker" class="block">
+      <h2 class="block-title">Fasting goal</h2>
+      <div id="presets" class="chips"></div>
+      <form id="customForm" class="custom-goal" hidden>
+        <label for="customHours">Hours</label>
+        <input id="customHours" type="number" min="1" max="72" step="0.5" inputmode="decimal">
+        <button class="btn-sm" type="submit">Set</button>
+      </form>
+    </section>
+
+    <!-- Running: facts -->
+    <section id="runFacts" class="block facts" hidden>
+      <button id="editStartBtn" class="fact" type="button">
+        <span class="fact-k">Started</span>
+        <span id="factStart" class="fact-v">—</span>
+        <span class="fact-hint">edit</span>
+      </button>
+      <div class="fact">
+        <span class="fact-k">Goal ends</span>
+        <span id="factEnd" class="fact-v">—</span>
+      </div>
+    </section>
+
+    <button id="primaryBtn" class="btn-primary" type="button">Start fast</button>
+
+    <!-- Current stage -->
+    <section class="block">
+      <h2 class="block-title">Right now</h2>
+      <article id="stageCard" class="stage-card">
+        <div class="stage-head">
+          <h3 id="stageTitle">Fed &amp; anabolic</h3>
+          <span id="stageRange" class="pill">0–4h</span>
+        </div>
+        <p id="stageBody"></p>
+        <ul id="stageBenefits" class="benefits"></ul>
+      </article>
+    </section>
+
+    <!-- Full timeline -->
+    <section class="block">
+      <h2 class="block-title">The whole fast</h2>
+      <ol id="timeline" class="timeline"></ol>
+    </section>
+
+    <p class="disclaimer">Educational only — not medical advice. Timings are
+      typical ranges and vary by person, diet and activity. Talk to a doctor
+      before fasting if you are pregnant, diabetic, underweight, or on
+      medication.</p>
+  </main>
+
+  <!-- ── History screen ───────────────────────────────────────── -->
+  <main id="historyView" class="view" hidden>
+    <h2 class="block-title">History</h2>
+    <ul id="historyList" class="history"></ul>
+    <p id="historyEmpty" class="empty" hidden>No completed fasts yet.</p>
+    <button id="clearHistoryBtn" class="btn-ghost" type="button" hidden>Clear history</button>
+  </main>
+
+</div>
+
+<!-- ── Edit start time sheet ──────────────────────────────────── -->
+<div id="editSheet" class="sheet-backdrop" hidden>
+  <form id="editForm" class="sheet" method="dialog">
+    <h2>When did you start?</h2>
+    <input id="startInput" type="datetime-local" required>
+    <p id="editError" class="error" hidden></p>
+    <div class="sheet-actions">
+      <button class="btn-ghost" type="button" data-close>Cancel</button>
+      <button class="btn-primary" type="submit">Save</button>
+    </div>
+  </form>
+</div>
+
+<!-- ── End-of-fast summary sheet ──────────────────────────────── -->
+<div id="summarySheet" class="sheet-backdrop" hidden>
+  <div class="sheet">
+    <h2 id="summaryTitle">Fast complete</h2>
+    <p id="summaryLine" class="summary-line"></p>
+    <p id="summaryGoal" class="muted"></p>
+    <h3 class="mini-title">Stages reached</h3>
+    <ul id="summaryStages" class="benefits"></ul>
+    <div class="sheet-actions">
+      <button id="discardBtn" class="btn-ghost" type="button">Delete this fast</button>
+      <button id="summaryDone" class="btn-primary" type="button">Done</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

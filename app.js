@@ -100,6 +100,179 @@ const STAGES = [
   }
 ];
 
+/* ── Learn library ────────────────────────────────────────────────────
+ * Evergreen fasting content: original short summaries of publicly shared
+ * ideas from longevity researchers and clinicians, with attribution. Not
+ * quotes, not medical advice.
+ */
+const LEARN = [
+  {
+    title: 'The metabolic switch',
+    source: 'The consensus science, in brief',
+    body: [
+      'Roughly 10–14 hours after your last meal, liver glycogen runs low and ' +
+      'the body flips its main fuel from glucose to fat and ketones. ' +
+      'Researchers call this the metabolic switch, and most of the benefits ' +
+      'linked to fasting — steadier energy, improved insulin sensitivity, ' +
+      'cellular clean-up — track this switch, not the hunger itself.',
+      'That is why the length of the fast matters more than how heroic it ' +
+      'feels: a fast that never reaches the switch is mostly just a late ' +
+      'breakfast.'
+    ],
+    takeaways: [
+      'Benefits cluster after ~12h, when the fuel switch flips',
+      'Consistency beats occasional heroics',
+      'Hunger comes in waves — it is not a progress meter'
+    ]
+  },
+  {
+    title: 'Peter Attia: the case for caution',
+    source: 'Longevity physician, author of Outlive',
+    body: [
+      'Attia is the most useful voice on fasting precisely because he changed ' +
+      'his mind. He once practised long multi-day fasts regularly, then ' +
+      'publicly walked it back after body-composition scans showed he had ' +
+      'lost significant lean mass — muscle he considers one of the best ' +
+      'predictors of healthy lifespan.',
+      'His current position: fasting is a real tool, but it is not free. The ' +
+      'calorie restriction it delivers comes bundled with a protein ' +
+      'restriction most people cannot afford. If your goal is longevity, ' +
+      'adequate protein and strength training rank ahead of aggressive ' +
+      'fasting — and any fasting practice should be designed so it does not ' +
+      'cost you muscle.'
+    ],
+    takeaways: [
+      'Muscle is a longevity organ — do not trade it for fasting hours',
+      'On eating days, hit protein hard and keep lifting',
+      'Prefer shorter daily fasts over frequent multi-day ones'
+    ]
+  },
+  {
+    title: 'Satchin Panda: eat with your clock',
+    source: 'Circadian biologist, Salk Institute',
+    body: [
+      'Panda’s research put time-restricted eating on the map. His core ' +
+      'finding: when you eat matters, independent of what you eat. Nearly ' +
+      'every organ runs on a circadian clock, and digestion, insulin ' +
+      'response and repair all work better when meals land in a consistent ' +
+      'daytime window.',
+      'His lab’s pattern for most people: an 8–10 hour eating window, ' +
+      'started earlier in the day rather than later, kept consistent across ' +
+      'the week. Late-night eating asks your metabolism to work its night ' +
+      'shift — the same meal costs more at 11pm than at 7pm.'
+    ],
+    takeaways: [
+      'An 8–10h consistent eating window is the evidence-backed sweet spot',
+      'Earlier windows beat later ones',
+      'Consistency across days matters as much as window length'
+    ]
+  },
+  {
+    title: 'Valter Longo: periodic beats chronic',
+    source: 'Gerontologist, USC Longevity Institute',
+    body: [
+      'Longo approaches fasting from longevity research rather than weight ' +
+      'loss, and lands somewhere surprising: for daily life he recommends a ' +
+      'moderate ~12-hour overnight fast, not an extreme one — he cautions ' +
+      'that very long daily windows can backfire for some people.',
+      'Where he sees the deep benefits is periodic resets: several ' +
+      'consecutive days of very low, plant-based intake a few times a year ' +
+      '(his fasting-mimicking diet), designed to trigger the clean-up and ' +
+      'regeneration of a prolonged fast while staying liveable. Think of it ' +
+      'as maintenance done in scheduled deep sessions rather than daily ' +
+      'grinding.'
+    ],
+    takeaways: [
+      'Daily: a gentle ~12h overnight fast is enough',
+      'The deep work happens in periodic multi-day resets, not every day',
+      'More extreme daily fasting is not automatically better'
+    ]
+  },
+  {
+    title: 'Jason Fung: the insulin lens',
+    source: 'Nephrologist, author of The Obesity Code',
+    body: [
+      'Fung popularised looking at fasting through one hormone: insulin. In ' +
+      'his framing, chronically elevated insulin keeps the body locked in ' +
+      'storage mode, and no amount of eating less works well while the ' +
+      'storage signal stays on. Fasting is the most direct way to turn it ' +
+      'off.',
+      'He has used supervised therapeutic fasting with patients with type 2 ' +
+      'diabetes and metabolic syndrome, and credits it with results that ' +
+      'surprised his field. Critics argue the insulin model is too simple — ' +
+      'but the practical core survives the debate: giving your body real ' +
+      'breaks from eating lowers insulin exposure, and that is worth having.'
+    ],
+    takeaways: [
+      'Fasting is the bluntest tool for lowering insulin exposure',
+      'Meal timing is a lever, not just meal content',
+      'Anyone on diabetes medication must involve their doctor first'
+    ]
+  },
+  {
+    title: 'What actually breaks a fast?',
+    source: 'The practical consensus',
+    body: [
+      'Water, black coffee and plain tea are safe in essentially every ' +
+      'framework — coffee may even nudge fat-burning along. Anything with ' +
+      'meaningful calories breaks the fast: milk in the coffee, juice, the ' +
+      '"small" handful of nuts.',
+      'The grey zone is zero-calorie sweeteners. The strict view says the ' +
+      'sweet taste alone can prime an insulin response and feed cravings; ' +
+      'the pragmatic view says the measured effect is small and a diet soda ' +
+      'that saves your fast is a good trade. Pick a rule and keep it ' +
+      'consistent so your history stays honest.'
+    ],
+    takeaways: [
+      'Water, black coffee, plain tea: always fine',
+      'Any real calories end the fast — there is no rounding down',
+      'Sweeteners: contested; choose one rule and stick to it'
+    ]
+  },
+  {
+    title: 'Fasting + training: keep the muscle',
+    source: 'Where Attia, Panda and the lifting world agree',
+    body: [
+      'The main risk of enthusiastic fasting is not hunger — it is quietly ' +
+      'paying for it with lean mass. The defence is boring and effective: ' +
+      'keep resistance training in the week, because lifting is the signal ' +
+      'that tells the body the muscle is still needed, and front-load ' +
+      'protein into your eating window on training days.',
+      'Scheduling helps too. Put hard sessions near your eating window so ' +
+      'recovery happens fed, and treat easy aerobic work as the thing you ' +
+      'do deep in the fasted window. A commonly cited protein target for ' +
+      'active adults is roughly 1.6–2.2g per kg of body weight per day — ' +
+      'hard to hit in a short window without planning for it.'
+    ],
+    takeaways: [
+      'Lift during the week you fast — it is the muscle-retention signal',
+      'Hard workouts near the eating window; easy cardio fasted',
+      'Protein needs planning when the window is short'
+    ]
+  },
+  {
+    title: 'Electrolytes and longer fasts',
+    source: 'Practical safety, widely agreed',
+    body: [
+      'Past roughly 18–24 hours, the body sheds sodium and water faster ' +
+      'than usual. The headache, fatigue or light-headedness people hit in ' +
+      'longer fasts is very often electrolytes, not hunger — salt in water, ' +
+      'plus attention to potassium and magnesium, fixes more "bad fasts" ' +
+      'than willpower does.',
+      'And a hard line: dizziness that does not pass, heart palpitations, ' +
+      'or feeling genuinely unwell are stop signals, not tests of ' +
+      'character. Longer fasts are also simply not for everyone — anyone ' +
+      'pregnant, underweight, diabetic or on regular medication should be ' +
+      'working with a doctor, not an app.'
+    ],
+    takeaways: [
+      'Salt + water fixes most long-fast misery',
+      'Feeling genuinely unwell means end the fast — no exceptions',
+      'Longer fasts need medical sign-off for anyone with conditions'
+    ]
+  }
+];
+
 const PRESETS = [
   { h: 13, label: '13h', note: 'circadian' },
   { h: 16, label: '16h', note: '16:8' },
@@ -420,6 +593,7 @@ function syncAchievements() {
 const $ = id => document.getElementById(id);
 const el = {
   timerView: $('timerView'), historyView: $('historyView'), navBtn: $('navBtn'),
+  learnView: $('learnView'), learnList: $('learnList'), learnBtn: $('learnBtn'),
   ringFill: $('ringFill'), ringLabel: $('ringLabel'), ringSub: $('ringSub'),
   elapsed: $('elapsed'),
   goalPicker: $('goalPicker'), presets: $('presets'),
@@ -907,12 +1081,64 @@ function submitEdit(e) {
 }
 
 /* ── View switching ───────────────────────────────────────────────── */
-function toggleView() {
-  const showHistory = el.historyView.hidden;
-  el.historyView.hidden = !showHistory;
-  el.timerView.hidden = showHistory;
-  el.navBtn.setAttribute('aria-label', showHistory ? 'Timer' : 'History');
-  if (showHistory) renderHistory();
+function showView(name) {
+  el.timerView.hidden = name !== 'timer';
+  el.historyView.hidden = name !== 'history';
+  el.learnView.hidden = name !== 'learn';
+  el.navBtn.setAttribute('aria-label', name === 'history' ? 'Timer' : 'History');
+  el.learnBtn.setAttribute('aria-label', name === 'learn' ? 'Timer' : 'Learn');
+  if (name === 'history') renderHistory();
+  if (name === 'learn') renderLearn();
+}
+/* Each icon toggles its view; tapping it again returns to the timer. */
+function toggleView() { showView(el.historyView.hidden ? 'history' : 'timer'); }
+function toggleLearn() { showView(el.learnView.hidden ? 'learn' : 'timer'); }
+
+/* ── Learn library ────────────────────────────────────────────────── */
+let learnRendered = false;
+function renderLearn() {
+  if (learnRendered) return;
+  el.learnList.replaceChildren(...LEARN.map(a => {
+    const card = document.createElement('article');
+    card.className = 'stage-card learn-item';
+
+    const head = document.createElement('button');
+    head.type = 'button';
+    head.className = 'learn-h';
+    head.setAttribute('aria-expanded', 'false');
+    const title = document.createElement('h3');
+    title.textContent = a.title;
+    const src = document.createElement('p');
+    src.className = 'learn-src';
+    src.textContent = a.source;
+    const chev = document.createElement('span');
+    chev.className = 'tl-chev';
+    chev.textContent = '+';
+    head.append(title, src, chev);
+
+    const detail = document.createElement('div');
+    detail.className = 'learn-detail';
+    detail.hidden = true;
+    for (const p of a.body) {
+      const para = document.createElement('p');
+      para.textContent = p;
+      detail.append(para);
+    }
+    const ul = document.createElement('ul');
+    ul.className = 'benefits';
+    ul.append(...benefitItems(a.takeaways));
+    detail.append(ul);
+
+    head.addEventListener('click', () => {
+      detail.hidden = !detail.hidden;
+      chev.textContent = detail.hidden ? '+' : '–';
+      head.setAttribute('aria-expanded', String(!detail.hidden));
+    });
+
+    card.append(head, detail);
+    return card;
+  }));
+  learnRendered = true;
 }
 
 /* ── Wire up ──────────────────────────────────────────────────────── */
@@ -920,6 +1146,7 @@ el.primaryBtn.addEventListener('click', () => (current ? endFast() : startFast()
 el.editStartBtn.addEventListener('click', openEditSheet);
 el.editForm.addEventListener('submit', submitEdit);
 el.navBtn.addEventListener('click', toggleView);
+el.learnBtn.addEventListener('click', toggleLearn);
 el.summaryDone.addEventListener('click', () => {
   lastSavedId = null;
   el.summarySheet.hidden = true;
